@@ -10,7 +10,26 @@ def cli(args=sys.argv):
 
 @cli.command("init")
 def initialize():
-    pass
+    try:
+        os.mkdir(".pvcs")
+        os.mkdir(".pvcs/revisions")
+    except FileExistsError:
+        print("Directory has already been initialized")
+        return
+
+    try:
+        # Create files for internal use
+        open(".pvcs/tracked", "a").close()
+        open(".pvcs/staged", "a").close()
+        open(".pvcs/structure_changes", "a").close()
+        open(".pvcs/current_rev_number", "a").close()
+
+    # Not sure what exception will be thrown, if any
+    # If one is thrown, specific handling can be added for it
+    except Exception as e:
+        print(repr(e))
+
+    click.echo("Initialized repository")
 
 @cli.command("track")
 @click.argument("paths", nargs=-1)
