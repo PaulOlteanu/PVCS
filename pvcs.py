@@ -32,7 +32,7 @@ def initialize():
     click.echo("Initialized repository")
 
 @cli.command("track")
-@click.argument("paths", nargs=-1)
+@click.argument("paths", type=click.Path(exists=True), nargs=-1)
 def track_file(paths):
     pass
 
@@ -57,7 +57,7 @@ def show_log():
 
 @cli.command("revert")
 @click.option("--back", "-b", is_flag=True)
-@click.option("number")
+@click.argument("number")
 def switch_to_commit(back, number):
     pass
 
