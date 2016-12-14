@@ -1,6 +1,7 @@
 import os
 import sys
 import click
+from lib import file_helpers
 
 @click.group()
 def cli(args=sys.argv):
@@ -22,7 +23,8 @@ def initialize():
         open(".pvcs/tracked", "a").close()
         open(".pvcs/staged", "a").close()
         open(".pvcs/structure_changes", "a").close()
-        open(".pvcs/current_rev_number", "a").close()
+        with open(".pvcs/current_rev_number", "a") as f:
+            f.write("1")
 
     # Not sure what exception will be thrown, if any
     # If one is thrown, specific handling can be added for it
@@ -31,24 +33,19 @@ def initialize():
 
     click.echo("Initialized repository")
 
-@cli.command("track")
-@click.argument("paths", type=click.Path(exists=True), nargs=-1)
-def track_file(paths):
-    pass
-
 @cli.command("stage")
 @click.argument("paths", nargs=-1)
-def stage_file(paths):
+def stage_files(paths):
     pass
 
 @cli.command("unstage")
 @click.argument("paths", nargs=-1)
-def unstage_file(paths):
+def unstage_files(paths):
     pass
 
 @cli.command("commit")
 @click.option("--message", "-m")
-def commit_file(message):
+def commit_files(message):
     pass
 
 @cli.command("log")
