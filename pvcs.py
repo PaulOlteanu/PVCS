@@ -22,9 +22,8 @@ def initialize():
         # Create files for internal use
         open(".pvcs/tracked", "a").close()
         open(".pvcs/staged", "a").close()
-        open(".pvcs/structure_changes", "a").close()
         with open(".pvcs/current_rev_number", "a") as f:
-            f.write("1")
+            f.write("0")
 
     # Not sure what exception will be thrown, if any
     # If one is thrown, specific handling can be added for it
@@ -36,6 +35,27 @@ def initialize():
 @cli.command("stage")
 @click.argument("paths", nargs=-1)
 def stage_files(paths):
+    files_to_stage = []
+    for file_path in paths:
+        if os.path.isdir(file_path):
+            # Loop through directory
+            files_to_stage.extend(file_helpers.expand_directory(file_path))
+        else:
+            # Append instead of extend because extend separates the string into its individual characters
+            # This has to do with the way strings act like lists in python
+            files_to_stage.append(file_path)
+
+    with open(".pvcs/tracked", "r+") as tracked_files, open(".pvcs/staged", "r+") as staged_files:
+        tracked_files_string = tracked_files.read()
+        for file_to_stage in files_to_stage:
+            # If the file is not already being tracked, track it
+            if tracked_files_string.find(file_to_stage) == -1:
+                tracked_files.write(file_to_stage + "\n")
+
+            # TODO: Something
+
+
+            staged_files.write(file_to_stage + "\n")
     pass
 
 @cli.command("unstage")
