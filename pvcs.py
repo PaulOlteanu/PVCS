@@ -32,11 +32,14 @@ def initialize():
 
     click.echo("Initialized repository")
 
+# TODO: Add support for deleting files
 @cli.command("stage")
 @click.argument("paths", nargs=-1)
 def stage_files(paths):
     files_to_stage = []
     for file_path in paths:
+
+        # Create list of full path for each file listed
         if os.path.isdir(file_path):
             # Loop through directory
             files_to_stage.extend(file_helpers.expand_directory(file_path))
@@ -47,16 +50,17 @@ def stage_files(paths):
 
     with open(".pvcs/tracked", "r+") as tracked_files, open(".pvcs/staged", "r+") as staged_files:
         tracked_files_string = tracked_files.read()
+        staged_files_string = staged_files.read()
+
         for file_to_stage in files_to_stage:
             # If the file is not already being tracked, track it
-            if tracked_files_string.find(file_to_stage) == -1:
-                tracked_files.write(file_to_stage + "\n")
+            if staged_files_string.find(file_to_stage) == -1:
+                if tracked_files_string.find(file_to_stage) == -1:
+                    tracked_files.write(file_to_stage + "\n")
+                    staged_files.write("C, " + file_to_stage + "\n")
 
-            # TODO: Something
-
-
-            staged_files.write(file_to_stage + "\n")
-    pass
+                else:
+                    staged_files.write("D, " + file_to_stage + "\n")
 
 @cli.command("unstage")
 @click.argument("paths", nargs=-1)
