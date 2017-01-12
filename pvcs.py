@@ -48,19 +48,13 @@ def stage_files(paths):
             # This has to do with the way strings act like lists in python
             files_to_stage.append(file_path)
 
-    with open(".pvcs/tracked", "r+") as tracked_files, open(".pvcs/staged", "r+") as staged_files:
-        tracked_files_string = tracked_files.read()
+    with open(".pvcs/staged", "r+") as staged_files:
         staged_files_string = staged_files.read()
 
         for file_to_stage in files_to_stage:
             # If the file is not already being tracked, track it
             if staged_files_string.find(file_to_stage) == -1:
-                if tracked_files_string.find(file_to_stage) == -1:
-                    tracked_files.write(file_to_stage + "\n")
-                    staged_files.write("C, " + file_to_stage + "\n")
-
-                else:
-                    staged_files.write("D, " + file_to_stage + "\n")
+                staged_files.write(file_to_stage + "\n")
 
 @cli.command("unstage")
 @click.argument("paths", nargs=-1)
@@ -77,28 +71,16 @@ def unstage_files(paths):
             # This has to do with the way strings act like lists in python
             files_to_unstage.append(file_path)
 
-    with open(".pvcs/tracked", "r+") as tracked_files, open(".pvcs/staged", "r+") as staged_files:
+    with open(".pvcs/staged", "r+") as staged_files:
         for file_to_unstage in files_to_unstage:
-
-            tracked_files_list = tracked_files.readlines()
             staged_files_list = staged_files.readlines()
-
-            tracked_files.seek(0)
             staged_files.seek(0)
 
             for staged_file in staged_files_list:
                 if staged_file.split(",")[1].strip() != file_to_unstage:
                     staged_files.write(staged_file)
 
-                # Untrack the file if it was created in the current commit. Otherwise it should still be tracked
-                elif staged_file.split(",")[0].strip() == "C":
-                    for tracked_file in tracked_files_list:
-                        if tracked_file.strip() != file_to_unstage:
-                            tracked_files.write(tracked_file)
-
-            tracked_files.truncate()
             staged_files.truncate()
-            tracked_files.seek(0)
             staged_files.seek(0)
     
 
