@@ -9,11 +9,15 @@ from helpers import patch_applier
 @click.group()
 def cli(args=sys.argv):
     """A simple, easy-to-use version control system
+
+    For more detailed help, use pvcs COMMAND --help
     """
     pass
 
 @cli.command("init")
 def initialize():
+    """Set up internal files and folders in preparation for tracking changes
+    """
     try:
         os.mkdir(".pvcs")
         os.mkdir(".pvcs/revisions")
@@ -40,6 +44,8 @@ def initialize():
 @cli.command("stage")
 @click.argument("paths", nargs=-1)
 def stage_files(paths):
+    """Add files to the stage to be included in the next commit
+    """
     files_to_stage = []
     for file_path in paths:
 
@@ -56,13 +62,14 @@ def stage_files(paths):
         staged_files_string = staged_files.read()
 
         for file_to_stage in files_to_stage:
-            # If the file is not already being tracked, track it
             if staged_files_string.find(file_to_stage) == -1:
                 staged_files.write(file_to_stage + "\n")
 
 @cli.command("unstage")
 @click.argument("paths", nargs=-1)
 def unstage_files(paths):
+    """Remove files from the stage. They will not be included in the next commit
+    """
     files_to_unstage = []
     for file_path in paths:
 
@@ -86,22 +93,24 @@ def unstage_files(paths):
 
         staged_files.truncate()
 
+# TODO: If commits aren't based on the most recent commit, the diff traversing needs to be different
 @cli.command("commit")
 @click.argument("commit_message")
 def commit_files(commit_message):
+    """Create a commit of the current state of the repository
+    """
     current_revision_number = None
 
-    with open(".pvcs/newest_commit_version", "r+") as newest_version_file,\
-         open(".pvcs/current_commit_version", "r+") as current_version_file:
+    with open(".pvcs/newest_commit_version", "r+") as newest_version_file, open(".pvcs/current_commit_version", "r+") as current_version_file:
         current_revision_number = int(newest_version_file.read())
+        current_version_file.write(str(current_revision_number))
         
-
         # Increment current version
         newest_version_file.seek(0)
-        current_version_file.write(str(current_revision_number))
         newest_version_file.write(str(current_revision_number + 1))
         newest_version_file.truncate()
 
+    # Create required folders and files
     os.mkdir(".pvcs/revisions/" + str(current_revision_number))
     os.mkdir(".pvcs/revisions/" + str(current_revision_number) + "/diffs")
     os.mkdir(".pvcs/revisions/" + str(current_revision_number) + "/copies")
@@ -109,32 +118,35 @@ def commit_files(commit_message):
     open(".pvcs/revisions/" + str(current_revision_number) + "/change_map", "a").close()
     open(".pvcs/revisions/" + str(current_revision_number) + "/commit_message", "a").close()
 
+    # Write commit message to file
     with open(".pvcs/revisions/" + str(current_revision_number) + "/commit_message", "r+") as commit_file:
         commit_file.write(commit_message)
 
-    with open(".pvcs/tracked", "r+") as tracked_files,\
-         open(".pvcs/staged", "r+") as staged_files,\
-         open(".pvcs/revisions/" + str(current_revision_number) + "/change_map", "r+") as change_map:
+    with open(".pvcs/tracked", "r+") as tracked_files, pen(".pvcs/staged", "r+") as staged_files, open(".pvcs/revisions/" + str(current_revision_number) + "/change_map", "r+") as change_map:
 
         staged_files_list = staged_files.readlines()
         tracked_files_string = tracked_files.read()
         staged_files.seek(0)
         tracked_files.seek(0)
 
+        # To be used to assign a file id to every file in the commit
         file_id = 1
         for staged_file in staged_files_list:
             staged_file = staged_file.strip()
 
+            # If the file isn't being tracked already, consider it "created" this commit, and add it to the tracked files list
             if tracked_files_string.find(staged_file) == -1:
                 change_map.write(str(file_id) + ",CREATE," + staged_file + "\n")
                 tracked_files.write(staged_file + "\n")
                 shutil.copyfile(staged_file, ".pvcs/revisions/" + str(current_revision_number) + "/copies/" + str(file_id))
             
+            # If it is being tracked, generate a diff for it
             else:
                 change_map.write(str(file_id) + ",CHANGE," + staged_file + "\n")
                 file_creation_revision_version = None
                 previous_file_version_string = ""
 
+                # Find the first occurence of it in a change map. This will be where it was "created"
                 found = False
                 for i in range(1, current_revision_number):
                     with open(".pvcs/revisions/" + str(i) + "/change_map") as old_change_map:
@@ -149,6 +161,7 @@ def commit_files(commit_message):
                     if found:
                         break
 
+                # Apply the diffs untill it reaches the most recently commited version
                 for i in range(file_creation_revision_version + 1, current_revision_number):
                     old_file_id = file_helpers.find_file_id_in_commit(staged_file, i)
 
@@ -160,9 +173,11 @@ def commit_files(commit_message):
                     except FileNotFoundError as e:
                         pass
 
+                # Create a diff between the current version of the file and it's most recently commited version
                 with open(".pvcs/revisions/" + str(current_revision_number) + "/diffs/" + str(file_id) + "_diff", "w") as diff_file,\
                      open(staged_file) as staged:
                     
+                    # Difflib needs the file as a list of every line instead of one string
                     diff_file.writelines(difflib.unified_diff(
                         [x + "\n" for x in previous_file_version_string.split("\n")[0:-1]],
                         [x + "\n" for x in staged.readlines()]))
@@ -176,6 +191,8 @@ def commit_files(commit_message):
 @click.option("--back", "-b", is_flag=True)
 @click.argument("number")
 def switch_to_commit(back, number):
+    """Switch to a specified commit number, or back n versions
+    """
     start_commit = None
     end_commit = None
 
@@ -187,10 +204,14 @@ def switch_to_commit(back, number):
 
 @cli.command("log")
 def show_log():
+    """Display information about past commits
+    """
     pass
 
 @cli.command("status")
 def show_status():
+    """Display information about the current stage, and state of the repository
+    """
     pass
 
 if __name__ == "__main__":
