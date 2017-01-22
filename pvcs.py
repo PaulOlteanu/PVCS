@@ -25,7 +25,7 @@ def initialize():
         # Create files for internal use
         open(".pvcs/tracked", "a").close()
         open(".pvcs/staged", "a").close()
-        with open(".pvcs/current_rev_number", "a") as f:
+        with open(".pvcs/newest_commit_version", "a") as f:
             # The first commit id will be 1
             f.write("1")
 
@@ -92,13 +92,16 @@ def unstage_files(paths):
 def commit_files(commit_message):
     current_revision_number = None
 
-    with open(".pvcs/current_rev_number", "r+") as rev_number_file:
-        current_revision_number = int(rev_number_file.read())
+    with open(".pvcs/newest_commit_version", "r+") as newest_version_file,\
+         open(".pvcs/current_commit_version", "r+") as current_version_file:
+        current_revision_number = int(newest_version_file.read())
+        
 
         # Increment current version
-        rev_number_file.seek(0)
-        rev_number_file.write(str(current_revision_number + 1))
-        rev_number_file.truncate()
+        newest_version_file.seek(0)
+        current_version_file.write(str(current_revision_number))
+        newest_version_file.write(str(current_revision_number + 1))
+        newest_version_file.truncate()
 
     os.mkdir(".pvcs/revisions/" + str(current_revision_number))
     os.mkdir(".pvcs/revisions/" + str(current_revision_number) + "/diffs")
@@ -170,14 +173,21 @@ def commit_files(commit_message):
     # Clear stage
     open(".pvcs/staged", "w").close()
 
-@cli.command("log")
-def show_log():
-    pass
-
 @cli.command("revert")
 @click.option("--back", "-b", is_flag=True)
 @click.argument("number")
 def switch_to_commit(back, number):
+    start_commit = None
+    end_commit = None
+
+    if back:
+        pass
+
+    else:
+        pass
+
+@cli.command("log")
+def show_log():
     pass
 
 @cli.command("status")
