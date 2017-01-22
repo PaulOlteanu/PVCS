@@ -76,16 +76,15 @@ def unstage_files(paths):
             files_to_unstage.append(file_path)
 
     with open(".pvcs/staged", "r+") as staged_files:
-        for file_to_unstage in files_to_unstage:
-            staged_files_list = staged_files.readlines()
-            staged_files.seek(0)
+        staged_files_list = staged_files.readlines()
+        staged_files.seek(0)
 
-            for staged_file in staged_files_list:
-                if staged_file.split(",")[1].strip() != file_to_unstage:
-                    staged_files.write(staged_file)
+        # Rewrite every line in the staged files list if it isn't one that needs to be unstaged
+        for staged_file in staged_files_list:
+            if staged_file.strip() not in files_to_unstage:
+                staged_files.write(staged_file)
 
-            staged_files.truncate()
-            staged_files.seek(0)
+        staged_files.truncate()
 
 @cli.command("commit")
 @click.argument("commit_message")
