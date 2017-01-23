@@ -227,9 +227,9 @@ def switch_to_commit(back, number):
                     with open(file_path, "r+") as file_to_change, open(".pvcs/revisions/" + str(i) + "/diffs/" + str(file_id) + "_diff") as diff:
                         current = file_to_change.read()
                         file_to_change.seek(0)
-                        file_to_change.write(
-                            patch_applier.apply_patch(current, diff.read(), step == -1)
-                        )
+                        # Change the file and write it back
+                        file_to_change.write(patch_applier.apply_patch(current, diff.read(), step == -1))
+                        file_to_change.truncate()
                 except Exception as e:
                     pass
 
@@ -240,13 +240,24 @@ def switch_to_commit(back, number):
 def show_log():
     """Display information about past commits
     """
-    pass
+
+    # Get the latest commit number
+    newest_commit = None
+    with open(".pvcs/newest_commit_version") as newest_version_file:
+        newest_commit = int(newest_version_file.read())
+
+    # Loop to that commit and print the message for all commits
+    for i in range(1, newest_commit):
+        with open(".pvcs/revisions/" + str(i) + "/commit_message") as message:
+            print("Version: " + str(i) + "\tMessage: " + message.read())
 
 @cli.command("status")
 def show_status():
     """Display information about the current stage, and state of the repository
     """
-    pass
+    print("Currently staged:")
+    with open(".pvcs/staged") as stage:
+        print(stage.read().strip())
 
 if __name__ == "__main__":
     cli()
