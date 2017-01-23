@@ -1,4 +1,6 @@
 def apply_patch(string_to_patch, patch, reverse=False):
+    """Apply a diff file to a specified string
+    """
 
     # The strings are now represented as arrays with every element being one line
     patch_lines = patch.split("\n")
