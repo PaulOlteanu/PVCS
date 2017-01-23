@@ -4,6 +4,8 @@ A toy vcs. There isn't really any reason to not use `git` instead
 
 <sup>Please don't blame me if you lose all your work</sup>
 
+A quick demo can be seen [here](https://asciinema.org/a/avxem93wl96j7rqkwliapvgrj)
+
 # Usage
 
 | Command | Function |
