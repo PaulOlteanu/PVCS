@@ -4,7 +4,7 @@ A toy vcs. There isn't really any reason to not use `git` instead
 
 <sup>Please don't blame me if you lose all your work</sup>
 
-A quick demo can be seen [here](https://asciinema.org/a/avxem93wl96j7rqkwliapvgrj)
+A quick demo can be seen [here](https://asciinema.org/a/52rh6e8ywncow1tc6hh51z4xc)
 
 # Usage
 
