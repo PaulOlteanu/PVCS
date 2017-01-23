@@ -53,4 +53,4 @@ def apply_patch(string_to_patch, patch, reverse=False):
                 current_line_number -= 1
 
     # This will return it as one string with newlines between every line
-    return "\n".join(final_text)
+    return "\n".join(final_text).rstrip()

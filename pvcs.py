@@ -29,9 +29,10 @@ def initialize():
         # Create files for internal use
         open(".pvcs/tracked", "a").close()
         open(".pvcs/staged", "a").close()
-        with open(".pvcs/newest_commit_version", "a") as f:
+        with open(".pvcs/newest_commit_version", "a") as f, open(".pvcs/current_commit_version", "a") as f2:
             # The first commit id will be 1
             f.write("1")
+            f2.write("1")
 
     # Not sure what exception will be thrown, if any
     # If one is thrown, specific handling can be added for it
@@ -40,7 +41,6 @@ def initialize():
 
     click.echo("Initialized repository")
 
-# TODO: Add support for deleting files
 @cli.command("stage")
 @click.argument("paths", nargs=-1)
 def stage_files(paths):
@@ -93,7 +93,6 @@ def unstage_files(paths):
 
         staged_files.truncate()
 
-# TODO: If commits aren't based on the most recent commit, the diff traversing needs to be different
 @cli.command("commit")
 @click.argument("commit_message")
 def commit_files(commit_message):
@@ -122,7 +121,7 @@ def commit_files(commit_message):
     with open(".pvcs/revisions/" + str(current_revision_number) + "/commit_message", "r+") as commit_file:
         commit_file.write(commit_message)
 
-    with open(".pvcs/tracked", "r+") as tracked_files, pen(".pvcs/staged", "r+") as staged_files, open(".pvcs/revisions/" + str(current_revision_number) + "/change_map", "r+") as change_map:
+    with open(".pvcs/tracked", "r+") as tracked_files, open(".pvcs/staged", "r+") as staged_files, open(".pvcs/revisions/" + str(current_revision_number) + "/change_map", "r+") as change_map:
 
         staged_files_list = staged_files.readlines()
         tracked_files_string = tracked_files.read()
@@ -193,14 +192,49 @@ def commit_files(commit_message):
 def switch_to_commit(back, number):
     """Switch to a specified commit number, or back n versions
     """
+
     start_commit = None
     end_commit = None
 
-    if back:
-        pass
+    with open(".pvcs/current_commit_version") as current_commit_version:
+        start_commit = int(current_commit_version.read())
 
+    if back:
+        end_commit = start_commit - int(number)
     else:
-        pass
+        end_commit = int(number)
+
+    start = None
+    end = None
+    step = None
+
+    # If going backwards
+    if start_commit > end_commit:
+        start = start_commit
+        end = end_commit
+        step = -1
+    else:
+        start = start_commit + 1
+        end = end_commit + 1
+        step = 1
+
+    for i in range(start, end, step):
+        with open(".pvcs/revisions/" + str(i) + "/change_map") as change_map:
+            # Change every file in the commit
+            for line in change_map.readlines():
+                file_id, action, file_path = line.strip().split(",")
+                try:
+                    with open(file_path, "r+") as file_to_change, open(".pvcs/revisions/" + str(i) + "/diffs/" + str(file_id) + "_diff") as diff:
+                        current = file_to_change.read()
+                        file_to_change.seek(0)
+                        file_to_change.write(
+                            patch_applier.apply_patch(current, diff.read(), step == -1)
+                        )
+                except Exception as e:
+                    pass
+
+    with open(".pvcs/current_commit_version", "w") as current_commit_version:
+        current_commit_version.write(str(end_commit))
 
 @cli.command("log")
 def show_log():
